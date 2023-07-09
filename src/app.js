@@ -5,6 +5,8 @@ const hbs = require("hbs");
 const Employee = require("./models/Employee");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
+const auth = require("./middleware/auth");
 
 const PORT = process.env.PORT || 7000;
 const staticPath = path.join(__dirname,"../public");
@@ -13,6 +15,7 @@ const partialsPath = path.join(__dirname,"../templates/partials");
 
 const app = express();
 app.use(express.json());
+app.use(cookieParser());
 app.use(express.urlencoded({extended:false}));
 app.use(express.static(staticPath))
 app.set("view engine", "hbs");
@@ -21,6 +24,11 @@ hbs.registerPartials(partialsPath);
 
 app.get("/", (req,res) => {
     res.render("index");
+});
+
+app.get("/profile", auth, (req,res) => {
+    //console.log(`Cookie saved to browser is: ${req.cookies.jwt}`);
+    res.render("profile");
 });
 
 app.get("/login", (req,res) => {
@@ -37,6 +45,12 @@ app.post("/login", async(req,res) => {
             const isPassMatch = await bcrypt.compare(password,result.password);
             const token = await result.generateAuthToken();
             if(isPassMatch) {
+                res.cookie("jwt", token, {
+                    expires: new Date(Date.now() + 600000),
+                    httpOnly: true,
+                    secure: true
+                });
+
                 res.status(201).render("index");
             }else{
                 res.status(400).send("Invalid email or password");
@@ -72,6 +86,12 @@ app.post("/register", async(req,res) => {
             });
 
             const token = await employee.generateAuthToken();
+
+            res.cookie("jwt", token, {
+                expires: new Date(Date.now() + 600000),
+                httpOnly: true
+            });
+            console.log(cookie);
 
             const result = await employee.save();
             res.status(201).render("index");
