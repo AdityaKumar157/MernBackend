@@ -28,7 +28,9 @@ app.get("/", (req,res) => {
 
 app.get("/profile", auth, (req,res) => {
     //console.log(`Cookie saved to browser is: ${req.cookies.jwt}`);
-    res.render("profile");
+    res.render("profile", {
+        details: `FirstName is ${req.user.firstname}. LastName is ${req.user.lastname}.`
+    });
 });
 
 app.get("/login", (req,res) => {
@@ -61,6 +63,25 @@ app.post("/login", async(req,res) => {
     }catch(err) {
         console.log(err);
         res.status(400).send("Invalid email or password");
+    }
+});
+
+app.get("/logout", auth, async(req,res) => {
+    try {
+        //logout from single device
+        // req.user.tokens = req.user.tokens.filter((currElement) => {
+        //     return currElement.token != req.token;
+        // });
+
+        //logout from all devices
+        req.user.tokens = [];
+
+        res.clearCookie("jwt");
+        console.log("Logout Successfully");
+        await req.user.save();
+        res.render("login");
+    } catch (error) {
+        res.status(500).send(error);
     }
 });
 
