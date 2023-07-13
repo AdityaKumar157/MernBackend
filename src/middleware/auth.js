@@ -10,6 +10,9 @@ const auth = async (req, res, next) => {
         const user = await Employee.findOne({_id:verifyUser._id});
         console.log(user);
 
+        //return user;
+        req.user = user;
+        req.token = token;
         next();
     }catch(err) {
         res.status(401).send(err);
